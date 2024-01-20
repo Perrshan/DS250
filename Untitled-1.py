@@ -1,24 +1,16 @@
 #%%
-import pandas as pd 
-import numpy as np
-import sqlite3
+import plotly.express as px
+data = px.data.iris()
+data.head()
 
+#%%
+px.scatter(data,
+    x="sepal_width", 
+    y="sepal_length", 
+    color = "species", 
+    size = "petal_length",
+    symbol = "species",
+    hover_data=["species", "petal_width"], 
+    title = "The relationship between sepal width and sepal length"
+)
 # %%
-# careful to list your path to the file or save it in the same place as your .qmd or .py file
-sqlite_file = 'lahmansbaseballdb.sqlite'
-con = sqlite3.connect(sqlite_file)
-
-q = 'SELECT * FROM allstarfull LIMIT 5'
-results = pd.read_sql_query(q,con)
-
-results
-# %%
-q = '''
-    SELECT * 
-    FROM sqlite_master 
-    WHERE type='table'
-    '''
-table = pd.read_sql_query(q,con)
-table.filter(['name'])
-# %%
-'''Xave Perry'''

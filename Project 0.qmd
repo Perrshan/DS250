@@ -1,0 +1,99 @@
+---
+title: "Client Report - Project 0: Introduction"
+subtitle: "Course DS 250"
+author: "Xave Perry"
+format:
+  html:
+    self-contained: true
+    page-layout: full
+    title-block-banner: true
+    toc: true
+    toc-depth: 3
+    toc-location: body
+    number-sections: false
+    html-math-method: katex
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+    code-copy: hover
+    code-tools:
+        source: false
+        toggle: true
+        caption: See code
+execute: 
+  warning: false
+    
+---
+
+```{python}
+#| label: libraries
+#| include: false
+import pandas as pd
+import numpy as np
+import plotly.express as px
+```
+
+
+## Elevator pitch
+
+_The top insights that I gained from this project was the difference between using altair and plotly.express to show graphs with the python coding langauge. How to read a csv file and use it to display data. How to print a markdown table and control how many lines are printed in that table. And finally, that cars with big engines use more fuel_
+
+## Setting up the Environment
+
+__Finish the readings and be prepared with any questions to get your environment working smoothly (class for on-campus and Slack for online)__
+
+_I was succesfully able to set up the environment_
+
+## Graph using Plotly Express
+
+__In VS Code, write a python script to create the example chart from section 3.2.2 of the textbook (part of the assigned readings). Note that you will be using Plotly Express to display the chart instead of Altair which is used in the book.__
+
+_I was succesfully able to read the data and create a scatter plot with said data. I was able to copy the graph that was made with altair in section 3.2 of P4DS. I saw that there was a negative relationship between engine size and fuel efficiency just like was stated in the chapter._
+
+```{python}
+#| label: Q2
+#| code-summary: Read and format data
+# Include and execute your code here
+
+# read data from the github page provided in project 0 documentation
+url = "https://raw.githubusercontent.com/byuidatascience/data4python4ds/master/data-raw/mpg/mpg.csv"
+mpg = pd.read_csv(url)
+```
+
+_There is a negative relationship between engine size and fuel eficiency._
+
+```{python}
+#| label: Q2 chart
+#| code-summary: plot example
+#| fig-cap: "Engine Size and Fuel Efficiency Chart"
+#| fig-align: center
+# Include and execute your code here
+
+# created a scatter plot with the same data sets as was shown in the textbook
+chart = px.scatter(mpg,  
+x="displ", 
+y="hwy",
+title = "The relationship between engine size and fuel efficiency")
+
+chart.show()
+```
+
+## Markdown Table
+
+__Your final report should also include the markdown table created from the following (assuming you have mpg from question 2).__
+
+_Here is a markdown table with some of the data points that were used to create the scatter plot above._
+```{python}
+#| label: Q3 table
+#| code-summary: table example
+#| tbl-cap: "Not much of a table"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+# used the code that was listed in the project 0 documentation
+print(mpg
+  .head(5)
+  .filter(["manufacturer", "model","year", "hwy"])
+  .to_markdown(index=False))
+
+```

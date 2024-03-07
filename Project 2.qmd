@@ -1,0 +1,291 @@
+---
+title: "Client Report - Project 2"
+subtitle: "Course DS 250"
+author: "Xave Perry"
+format:
+  html:
+    self-contained: true
+    page-layout: full
+    title-block-banner: true
+    toc: true
+    toc-depth: 3
+    toc-location: body
+    number-sections: false
+    html-math-method: katex
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+    code-copy: hover
+    code-tools:
+        source: false
+        toggle: true
+        caption: See code
+execute: 
+  warning: false
+    
+---
+
+```{python}
+#| label: libraries
+#| include: false
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import json
+```
+
+
+## Elevator pitch
+
+_This project was full of awesome insights and data about flights from airports across the United States. I was able to find the proportion of delays to the average amount of hours that each of those delays took to find the airport that when a delay occurs everyone should get comfy. I also looked deeply into weather delays and how it effects each of the airports. I also found which month is the best month to fly in with the least amount of delays. If you want to be a flying expert, I would definitely recommend looking at this data and notice how tidy it all is while you're at it._
+
+```{python}
+#| label: project data
+#| code-summary: Read and format project data
+# Include and execute your code here
+
+with open('flights.json', 'r') as file:
+    data = json.load(file)
+
+df = pd.DataFrame(data)
+
+```
+
+## Tidying Data
+
+__Fix all of the varied missing data types in the data to be consistent (all missing values should be displayed as “NaN”).__
+
+_I was able to use the replace library tool to find any data that was blank or equal to 'null' and changed it to 'NaN' so that there was no empty data. I displayed this by showing the airport names and how some of them were left blank so the name for that airport now is displayed with NaN in it's place. There were lots of data that were left blank along with the airport name, like the month column for example._
+
+```{python}
+#| label: Q1
+#| code-summary: Read and format data
+# Include and execute your code here
+
+# Replace empty strings and "null" with 'NaN' in the 'airport_name' column
+df.replace(['', 'null'], 'NaN', inplace=True)
+
+# Replace incorrect spelling of February.
+df.replace(['Febuary'], 'February', inplace=True)
+```
+
+_This table was made to display the airport name so that the NaN value could be seen. I added additional data points to show more detail about numbers for each of the airport's and how NaN still has values as well._
+
+```{python}
+#| label: Q1 table
+#| code-summary: summed the total number of flights and delays and showed them on the table along with the airport names. Main goal was to show the NaN value.
+#| tbl-cap: "Tidy data"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+# Define columns and their aggregation functions
+agg_columns = {
+    'num_of_flights_total': 'sum',
+    'num_of_delays_total': 'sum',
+}
+
+# Group by 'airport_name' and apply the aggregation functions
+combined_df = df.groupby('airport_name').agg(agg_columns).reset_index()
+
+# Display the result
+display(combined_df)
+
+```
+
+
+## Airports to Avoid
+
+__Which airport has the worst delays?__
+
+_To find the airport with the worst delays I created a table that shows the airport code, the total number of flights, and the total number of delays. I also calculated the total delays per average hours of delay to show how long each delay was each time it happened. Because the data was originally in minutes I changed the minutes delayed total to hours by dividing it by 60. To my surpirse, I found that the San Francisco airport even with it's low numbers of overall flights had the worst wait time ratio with 4.66%. That was closely followed by Salt Lake City, and Denver. I would say that the airport with the worst delays would be San Francisco, but the pool of data was lower for that variable so there could be some fault due to lack of data._
+
+```{python}
+#| label: Q2
+#| code-summary: Read and format data
+# Include and execute your code here
+
+agg_columns = {
+    'num_of_flights_total': 'sum',
+    'num_of_delays_total': 'sum',
+    'minutes_delayed_total': lambda x: x.mean(),  # find average
+}
+
+# Group by 'airport_name' and apply the aggregation functions
+combined_df = df.groupby('airport_code').agg(agg_columns).reset_index()
+
+# Calculate the percentage of delays in relation to total flights in hours
+combined_df['ttl_delays/hrs_delay'] = (combined_df['num_of_delays_total'] /(combined_df['minutes_delayed_total'])/60) * 100 # convert minutes to hours in calculation
+
+# Format integer columns with commas for better readability
+for col in ['num_of_flights_total', 'num_of_delays_total']:
+    combined_df[col] = combined_df[col].apply(lambda x: '{:,.0f}'.format(x))
+
+# Format the percentage column
+combined_df['ttl_delays/avg_hrs_delay'] = combined_df['ttl_delays/hrs_delay'].apply(lambda x: '{:.2f}%'.format(x))
+
+```
+
+_This table was made to show the metrics that I chose to make my point of which airport was the worst with delays. The final column was the proportion between the total number of delays and the number of hours that each delay had to show trends that would not be seen if you only compared the total number of delays alone._
+
+
+```{python}
+#| label: Q2 table
+#| code-summary: show only the desired columns in a table
+#| tbl-cap: "Airports to Avoid"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+mydat = combined_df\
+    .reset_index()\
+    .filter(['airport_code', 'num_of_flights_total', 'num_of_delays_total', 'ttl_delays/avg_hrs_delay'])
+
+display(mydat)
+```
+
+
+## Best Month to Fly
+
+__What is the best month to fly if you want to avoid delays of any length?__
+
+_All of the different months it seem to be pretty consistent along with some low outliers of September and November, and some high outliers of June, July, and December. November is the leading month for the lowest number of Delays by about 4,000. So from the data I would say that the best month to fly in is November with September as a close second._
+
+```{python}
+#| label: Q3
+#| code-summary: Read and format data
+# Include and execute your code here
+
+df_filtered_month = df[df['month'] != 'n/a']
+
+```
+
+_In the bar graph I excluded any months that were null so that only the labeled months were shown. I used the total number of delays as the metric of measurement. I added a dashed line at the height of the November bar so that the value could easily be compared with the rest of the months. I also noticed that February was mispelt in the data so I changed every value of "Febuary" to the correct spelling in the first step when I replaced all null values with NaN._
+
+```{python}
+#| label: Q3 chart
+#| code-summary: totaled number of delays and grouped by month, placed the months in the correct order, displayed in a bar chart and added a line at the minimun delay value.
+#| fig-cap: "Best Month to Fly"
+#| fig-align: center
+# Include and execute your code here
+
+# group and filter
+df_month_sum = df_filtered_month.groupby("month", as_index=False)["num_of_delays_total"].sum()
+
+# order the months correctly
+month_order = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+
+chart = px.bar(df_month_sum,
+               x="month",
+               y="num_of_delays_total",
+               color="month",
+               category_orders={'month': month_order},
+               title='Best Month to Fly'
+)
+
+# add line at the lowest delay value
+lowest_value = df_month_sum["num_of_delays_total"].min()
+chart.add_shape(type="line",
+               x0=df_month_sum["month"].iloc[4],
+               x1=df_month_sum["month"].iloc[2],
+               y0=lowest_value,
+               y1=lowest_value,
+               line=dict(color="black", width=2, dash='dash')
+)
+
+chart.show()
+```
+
+## Weather Delays
+
+__Your job is to create a new column that calculates the total number of flights delayed by weather (both severe and mild). Using the new weather variable calculated above, create a barplot showing the proportion of all flights that are delayed by weather at each airport. Discuss what you learn from this graph.__
+
+_I was able to calculate the total weather for each of the different rows of data. Using the rules that were outlined in the project I calculated the results and put it in a column called "total_weather". I also added an additional column called "total_before_calc" that did not apply any of the rules and just added all three columns as they were without taking off any values as a comparison for how the rules effected the outcome of the data._
+ 
+```{python}
+#| label: Q4
+#| code-summary: Read and format data
+# Include and execute your code here
+
+# Exlcude NaN values
+df_filtered_negative_values = df[df["num_of_delays_late_aircraft"] != -999]
+
+# Calculate the average excluding NaN values
+average_delay = df_filtered_negative_values["num_of_delays_late_aircraft"].mean()
+
+# Replace -999 with the calculated average in the original DataFrame
+df["num_of_delays_late_aircraft"].replace(-999, average_delay, inplace=True)
+
+# 100% of weather delays and 30% of late delays.
+df['total_weather'] = np.ceil(df['num_of_delays_weather'] + df['num_of_delays_late_aircraft'] * 0.3)
+
+# Check if the month is in the specified list
+is_summer_month = df['month'].isin(['April', 'May', 'June', 'July', 'August'])
+
+# 40% or 60% depending on month
+# Apply different multipliers based on the month
+df['total_weather'] += np.where(is_summer_month, np.ceil(df['num_of_delays_nas'] * 0.4), np.ceil(df['num_of_delays_nas'] * 0.65))
+
+# Round 'total_weather' to the nearest integer
+df['total_weather'] = df['total_weather'].astype(int)
+
+# 100% of each column to show the difference in the table.
+df['total_before_calc'] = df['num_of_delays_weather'] + df['num_of_delays_late_aircraft'] + df['num_of_delays_nas']
+
+df['total_before_calc'] = df['total_before_calc'].astype(int)
+
+```
+
+_Made a table with the first 5 rows of data. I replaced each of the values of "-999" which I assumed to be null with the average value of 1109.143. I while calculating the totals I also used the np.ceil function to round the numbers to the next integer since it does not make sense to have a portion of a weather delay._
+
+```{python}
+#| label: Q4 table
+#| code-summary: showing only the first 5 rows of data, using custom columns defined above.
+#| tbl-cap: "Weather Delays"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+mydat = df.head(5)\
+    .reset_index()\
+    .filter(["total_weather", "total_before_calc"])
+
+display(mydat)
+
+```
+
+## Weather Delays at each Airport
+
+__Using the new weather variable calculated above, create a barplot showing the proportion of all flights that are delayed by weather at each airport. Discuss what you learn from this graph.__
+
+_I found that the total weather delays of all the different airports vary greatly. There are three noticable groups of data ranges. ATL and ORD are in the 300,000 range, DEN, and SFO are in the 150,000 range, and IAD, SAN, and SLC are in the 50,000 range. Thinking about each of this airports geographically I am not sure why they are grouped this way. ATL and ORD are more eastern which is somewhat of a similiarity but still not very satisfying since DC is also to the East. Regardless of geographical location, you are much more likely to have delays due to weather in ATL and ORD airports and much less likely in IAD, SAN, and SLC._
+
+```{python}
+#| label: Q5
+#| code-summary: Read and format data
+# Include and execute your code here
+
+df_weather = df
+
+```
+
+_I summed of all of the total weather numbers and grouped them by the airport code to easily see the total values of each of the bars. I also chose to use the codes for easier viewing since the names of the airports are quite long._
+
+```{python}
+#| label: Q5 chart
+#| code-summary: grouped and summed data, showed in form of a bar chart.
+#| fig-cap: "Weather Delays at each Airport"
+#| fig-align: center
+# Include and execute your code here
+
+
+# group by code and total weather sum
+df_weather_sum = df_weather.groupby("airport_code", as_index=False)["total_weather"].sum()
+
+chart = px.bar(df_weather_sum.head(200),
+               x="airport_code",
+               y="total_weather",
+               color="airport_code",
+               title="Weather Delays at each Airport"
+)
+
+chart.show()
+```

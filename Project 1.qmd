@@ -1,7 +1,7 @@
 ---
-title: "Client Report - [Insert Project Title]"
+title: "Client Report - Project 1"
 subtitle: "Course DS 250"
-author: "[STUDENT NAME]"
+author: "Xave Perry"
 format:
   html:
     self-contained: true
@@ -31,161 +31,346 @@ execute:
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 ```
 
 
 ## Elevator pitch
 
-_paste your elevator pitch here_
-_A SHORT (4-5 SENTENCES) PARAGRAPH THAT `DESCRIBES KEY INSIGHTS` TAKEN FROM METRICS IN THE PROJECT RESULTS THINK TOP OR MOST IMPORTANT RESULTS._
+_I was able to find the uses of my name throughout history and compare it to the year that I was born, and the data is customizable to have it show the data of most names. I found that if you were to get a call from someone named Brittany you could guess her age to be around 30-40 years old. The names Mary, Martha, Peter, and Paul were common Christian names and I found that Mary was by far the most common name from 1920-2000. Finally I found strong evidence to support that the movie <i>Titanic</i> inpsired many people to name their kids Rose. There is a lot that we can learn from a name and this project shows a small amount of information we can create soley from data about names._
 
 ```{python}
 #| label: project data
 #| code-summary: Read and format project data
 # Include and execute your code here
-df = pd.read_csv("https://github.com/byuidatascience/data4names/raw/master/data-raw/names_year/names_year.csv")
+
+url = "https://raw.githubusercontent.com/byuidatascience/data4names/master/data-raw/names_year/names_year.csv"
+df = pd.read_csv(url)
 ```
 
-__Highlight the Questions and Tasks__
+## Xavier throughout History
 
-## QUESTION|TASK 1
+__How does your name at your birth year compare to its use historically?__
 
-__COPY PASTE QUESTION|TASK 1 FROM THE PROJECT HERE__
-
-_type your results and analysis here_
+_I found that the name Xavier was used very rarely in the early 1900's and didn't even pass 100 uses until the year 1966! When I was born in 2001 there was a big increase in the uses of the name Xavier and it continued to increase until 2007 capping at 6552 uses. Although there is a decline beginning to happen I found that Xavier has definitely increased in popularity over time._
 
 ```{python}
 #| label: Q1
 #| code-summary: Read and format data
 # Include and execute your code here
 
+#Filter names to only Xavier
+#df_xavier = df[df['name'] == 'Xavier']
+df_oliver = df[df['name'] == 'Oliver']
+#df_oliver_ut = df_oliver[df_oliver['UT'] == 'UT']
 
 ```
 
-_include figures in chunks and discuss your findings in the figure._
+_Here is a line chart showing the data that has the name Xavier. I put an anotation on the year 2001 so that it is easy to see which is the year of focus for this data set._
 
 ```{python}
 #| label: Q1 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| code-summary: Designed line graph, added anotations for my birth year
+#| fig-cap: "Uses of the name Xavier"
 #| fig-align: center
 # Include and execute your code here
-chart = px.bar(df.head(200),
-    x="name", 
-    y="AK"
-)
+
+# Create Line Chart
+chart = px.line(df_oliver,  
+x='year',
+y='Total',
+color = None,
+labels= {'Total': 'Number of Uses', 'year': 'Year'},
+title = "Xavier throughout History")
+
+#Declare tick mark settings
+chart.update_xaxes(tickmode='linear', tick0=df_oliver_ut['year'].min(), dtick=1)
+
 chart.show()
 ```
 
 
 ```{python}
 #| label: Q1 table
-#| code-summary: table example
-#| tbl-cap: "Not much of a table"
+#| code-summary: table of the uses of Xavier
+#| tbl-cap: "Table of the uses of Xavier"
 #| tbl-cap-location: top
 # Include and execute your code here
-mydat = df.head(1000)\
+
+#Limit the years shown on the table to 1996-2005
+'''
+df_xavier_filtered = df_xavier[(df_xavier['year'] >= 1996) & (df_xavier['year'] <= 2005)]
+
+mydat = df_xavier_filtered.head(1000)\
     .groupby('year')\
     .sum()\
     .reset_index()\
-    .tail(10)\
-    .filter(["year", "AK","AR"])
+    .tail(15)\
+    .filter(['year', 'Total'])
 
 display(mydat)
+'''
+
+# Assuming your DataFrame is named df_oliver
+mydat = df_oliver.head(1000)\
+    .groupby('year')\
+    .sum()\
+    .reset_index()\
+    .filter(['year', 'UT'])
+
+# Add a new row with the total of the 'UT' column
+total_row = pd.DataFrame({'year': ['Total'], 'UT': [mydat['UT'].sum()]})
+mydat = pd.concat([mydat, total_row], ignore_index=True)
+
+display(mydat)
+
 
 ```
 
 
-## QUESTION|TASK 2
+## Can you guess the age?
 
-__COPY PASTE QUESTION|TASK 2 FROM THE PROJECT HERE__
+__If you talked to someone named Brittany on the phone, what is your guess of his or her age? What ages would you not guess?__
 
-_type your results and analysis here_
+_I found that there was a dramatic increase in the uses of the name Brittany starting in 1980 and ending in 1990 which was followed by an almost equally dramatic decline in the use of the name Brittany. From the data I conculded that if you were to receive a phone call from someone named Brittany then you could make a guess that she was born sometime between the years 1986-1994 with the greatest amount of Brittany's being born in 1990. That would give an age range of 30-38 years old. I would not guess the ages of 46 and older or 14 and younger._
 
 ```{python}
 #| label: Q2
 #| code-summary: Read and format data
 # Include and execute your code here
 
+#Filter names to only Brittany
+df_brittany = df[df['name'] == 'Brittany']
 
 ```
 
-_include figures in chunks and discuss your findings in the figure._
+_Here is a line chart showing the data of those with the name of Brittany. I included an annotation sharing the year with the highest uses of the name brittany, the actual value of that year, and the age that someone would be if they were born in that year._
 
 ```{python}
 #| label: Q2 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| code-summary: Design line graph, add an annotation showing highest used year and calculated age.
+#| fig-cap: "How old is Brittany?"
 #| fig-align: center
 # Include and execute your code here
-chart = px.bar(df.head(200),
-    x="name", 
-    y="AK"
+
+#Create Line Chart
+chart = px.line(df_brittany,  
+x='year',
+y='Total',
+color = None,
+labels= {'Total': 'Number of Uses', 'year': 'Year'},
+title = "How old is Brittany?")
+
+#Declare tick mark settings
+chart.update_xaxes(tickmode='linear', tick0=df_brittany['year'].min(), dtick=20)
+
+#Add an annotation showing the peak of the use of the name Brittany
+highlight_year = 1990
+age_highlight_year = 2024-1990
+highlight_value = df_brittany.loc[df_brittany['year'] == highlight_year, 'Total'].iloc[0]
+chart.add_annotation(
+    x=highlight_year,
+    y=highlight_value,
+    text=f'Year: {highlight_year} Value: {highlight_value} Age: {age_highlight_year}',
+    showarrow=True,
+    arrowhead=2,
+    arrowsize=1,
+    arrowwidth=2,
+    arrowcolor='black',
+    font=dict(size=12, color='black',),
+    bgcolor='yellow',
+    opacity=1
 )
+
 chart.show()
 ```
 
 
 ```{python}
 #| label: Q2 table
-#| code-summary: table example
-#| tbl-cap: "Not much of a table"
+#| code-summary: table showing brittany data
+#| tbl-cap: "Popular Decade for the Name of Brittany"
 #| tbl-cap-location: top
 # Include and execute your code here
-mydat = df.head(1000)\
+
+#Limit to only the years 1985-1995
+df_brittany_filtered = df_brittany[(df_brittany['year'] >= 1985) & (df_brittany['year'] <= 1995)]
+
+mydat = df_brittany_filtered.head(1000)\
     .groupby('year')\
     .sum()\
     .reset_index()\
     .tail(10)\
-    .filter(["year", "AK","AR"])
+    .filter(['year', 'name', 'Total'])
 
 display(mydat)
 
 ```
 
 
-## QUESTION|TASK 3
+## Popularity Contest
 
-__COPY PASTE QUESTION|TASK 3 FROM THE PROJECT HERE__
+__Mary, Martha, Peter, and Paul are all Christian names. From 1920 - 2000, compare the name usage of each of the four names. What trends do you notice?__
 
-_type your results and analysis here_
+_I found that of the names Mary, Martha, Peter, and Paul that Mary was by far the most commonly used name by somtimes double the amount of the other names. I also found a common trend that was interesting. Around the year 1956 all 4 names seemed to all start declining in uses and never reached the peaks they had in the past. At the end of the data it can also be seen that they all seem to be becoming about the same popularity level with Mary still slightly in the lead._
 
 ```{python}
 #| label: Q3
 #| code-summary: Read and format data
 # Include and execute your code here
 
+#Filter names to Mary, Martha, Peter, and Paul and from the range 1920-2000
+names_to_filter = ['Mary', 'Martha', 'Peter', 'Paul']
+years_to_filter = [year for year in range(1910, 1920)] + [year for year in range(2001, 2016)]
+
+df_christian_names = df[df['name'].isin(names_to_filter) & ~df['year'].isin(years_to_filter)]
 
 ```
 
-_include figures in chunks and discuss your findings in the figure._
+_Here is a line chart that shows the uses of 4 common Christian names from the years 1920-2000. I added an annotation and a dashed line to draw attention to a common theme of decline among all 4 names._
 
 ```{python}
 #| label: Q3 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| code-summary: Designed a line chart, added a dashed line through 1956, and added an annotation
+#| fig-cap: "Popular Christian names through time"
 #| fig-align: center
 # Include and execute your code here
-chart = px.bar(df.head(200),
-    x="name", 
-    y="AK"
+
+#Create Line Graph
+chart = px.line(df_christian_names,  
+x='year',
+y='Total',
+color = 'name',
+labels= {'Total': 'Number of Uses', 'year': 'Year'},
+title = "Popular Christian Names Through Time")
+
+#Declare tick mark settings
+chart.update_xaxes(tickmode='linear', tick0=df_christian_names['year'].min(), dtick=20)
+
+#Add dashed line to year 1956
+chart.add_shape(
+    go.layout.Shape(
+        type='line',
+        x0=1956,
+        x1=1956,
+        y0=df_christian_names['Total'].min(),
+        y1=df_christian_names['Total'].max(),
+        line=dict(color='black', width=2, dash='dash'),
+        opacity=0.5
+    )
 )
+
+#Add annotation to describe dashed line's purpose of showing the decline
+chart.add_annotation(
+    x=1956,
+    y=df_christian_names['Total'].max(),
+    text='Decline Begins',
+    showarrow=True,
+    arrowhead=4,
+    ax=0,
+    ay=-40
+)
+
 chart.show()
 ```
 
 
 ```{python}
 #| label: Q3 table
-#| code-summary: table example
-#| tbl-cap: "Not much of a table"
+#| code-summary: table for popular baby names
+#| tbl-cap: "Table of Popular Christian names"
 #| tbl-cap-location: top
 # Include and execute your code here
-mydat = df.head(1000)\
-    .groupby('year')\
+
+mydat = df_christian_names.head(1000)\
+    .groupby('name')\
     .sum()\
     .reset_index()\
     .tail(10)\
-    .filter(["year", "AK","AR"])
+    .filter(['name', 'Total'])
+
+display(mydat)
+
+```
+
+
+## <i>Titanic</i> Inspiration
+
+__Think of a unique name from a famous movie. Plot the usage of that name and see how changes line up with the movie release. Does it look like the movie had an effect on usage?__
+
+_The name that I thought of was Rose from the movie <i>Titanic</i>. The year that <i>Titanic</i> was released was 1997 and the data shows on the line graph that immediatly following that year there was a spike of the use of Rose by almost 400 uses per year for the following 4 years. I would have to conclude that there was an effect after the release of <i>Titanic</i> on the uses of the name Rose. I also found it interesting that the name Rose has spiked tremendously in the last few years doubling the previously highest uses._
+```{python}
+#| label: Q4
+#| code-summary: Read and format data
+# Include and execute your code here
+
+#Filter to names of Rose used from the years 1990-2015
+years_to_filter = [year for year in range(1990, 2016)]
+
+df_rose = df[df['name'].isin(['Rose']) & df['year'].isin(years_to_filter)]
+
+```
+
+_I created a line chart to display the data of the use of the name Rose. I added a dashed line to show the release year of the movie <i>Titanic</i>. It is easy to see a dramatic increase immediately after the release of the movie._
+
+```{python}
+#| label: Q4 chart
+#| code-summary: Creation of line graph, line at 1997, and an annotation
+#| fig-cap: "How <i>Titanic</i> impacted the use of Rose"
+#| fig-align: center
+# Include and execute your code here
+
+#Create Line Graph
+chart = px.line(df_rose,  
+x='year',
+y='Total',
+color = None,
+labels= {'Total': 'Number of Uses', 'year': 'Year'},
+title = 'How <i>Titanic</i> impacted the use of Rose')
+
+#Declare tick mark settings
+chart.update_xaxes(tickmode='linear', tick0=df_rose['year'].min(), dtick=5)
+
+#Add dashed line on year 1997 for movie release
+chart.add_shape(
+    go.layout.Shape(
+        type='line',
+        x0=1997,
+        x1=1997,
+        y0=df_rose['Total'].min(),
+        y1=df_rose['Total'].max(),
+        line=dict(color='black', width=2, dash='dash')
+    )
+)
+
+#Describes dashed line's purpose
+chart.add_annotation(
+    x=1997,
+    y=df_rose['Total'].max(),
+    text=f'1997 - <i>Titanic</i>',
+    showarrow=True,
+    arrowhead=4,
+    ax=0,
+    ay=-40
+)
+
+chart.show()
+```
+
+
+```{python}
+#| label: Q4 table
+#| code-summary: table for uses of Rose
+#| tbl-cap: "Table of uses of Rose from 1995-2015"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+mydat = df_rose.head(1000)\
+    .groupby('year')\
+    .sum()\
+    .reset_index()\
+    .tail(21)\
+    .filter(['year', 'name', 'Total'])
 
 display(mydat)
 

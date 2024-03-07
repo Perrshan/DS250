@@ -1,0 +1,268 @@
+---
+title: "Client Report - Project 3"
+subtitle: "Course DS 250"
+author: "Xave Perry"
+format:
+  html:
+    self-contained: true
+    page-layout: full
+    title-block-banner: true
+    toc: true
+    toc-depth: 3
+    toc-location: body
+    number-sections: false
+    html-math-method: katex
+    code-fold: true
+    code-summary: "Show the code"
+    code-overflow: wrap
+    code-copy: hover
+    code-tools:
+        source: false
+        toggle: true
+        caption: See code
+execute: 
+  warning: false
+    
+---
+
+```{python}
+#| label: libraries
+#| include: false
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import sqlite3
+```
+
+
+## Elevator pitch
+
+_During this project I was able to look into the data covering one of the favorite sports of America, baseball! I was able to look into the salaries of some of the BYUI college players finding one player who made up to 4 million dollars in a single year. I also caclulated batting averages and how they change when the batters have been at the plates more times. Finally, I compared the number of home runs between two of the most documented teams the Cincinnati Reds and the Pittsburgh Pirates and the results may surprise you. Overall, if you are a baseball enthusiast this is the project for you!_
+
+```{python}
+#| label: project data
+#| code-summary: Read and format project data
+# Include and execute your code here
+sqlite_file = 'lahmansbaseballdb.sqlite'
+con = sqlite3.connect(sqlite_file)
+```
+
+## BYUI College Player Salaries
+
+__Write an SQL query to create a new dataframe about baseball players who attended BYU-Idaho. The new table should contain five columns: playerID, schoolID, salary, and the yearID/teamID associated with each salary. Order the table by salary (highest to lowest) and print out the table in your report.__
+
+_I found that Lindsma01 had the highset salary for many of the later years, and Stephga01 had the highest salary in some of the ealier years. The highest salary was in 2014 for $4,000,000._
+
+
+_I found that there was a wide range of salaries among the BYUI players and that there were only 2 of them in this data set._
+
+
+```{python}
+#| label: Q1 table
+#| code-summary: Salary of BYUI players
+#| tbl-cap: "Salary of BYUI Players"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+q = '''
+SELECT DISTINCT c.playerID, c.schoolID, s.salary, s.yearID, s.teamID 
+FROM collegeplaying c JOIN 
+salaries s  ON c.playerID = s.playerID 
+WHERE schoolID = "idbyuid" 
+ORDER BY s.salary desc
+'''
+results = pd.read_sql_query(q,con)
+
+results
+
+```
+
+
+## Batting Average
+
+__Write an SQL query that provides playerID, yearID, and batting average for players with at least 1 at bat that year. Sort the table from highest batting average to lowest, and then by playerid alphabetically. Show the top 5 results in your report. Use the same query as above, but only include players with at least 10 at bats that year. Print the top 5 results. Now calculate the batting average for players over their entire careers (all years combined). Only include players with at least 100 at bats, and print the top 5 results.__
+
+_Every table has unique players that were shown in the top 5 best average scores. I also noticed that as the number of AB's was increased the average number went down in value with the highest score after at least 100 bats was 40% of those being hits. Hazlebo01 was the best hitter of those who had at least 100 bats._
+
+_All of the tables have unique player_ID's which I thought was intersting showing that with even a 10 AB increase there was a whole new set of players in the top 5. As the AB's were increased the averages got lower and lower._
+
+```{python}
+#| label: Q2 table 'a'
+#| code-summary: Batting average for 0 or more hits
+#| tbl-cap: "Batting Average for 0 or More Hits"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+q = '''
+SELECT playerID, yearID, (H * 1.0 / AB) AS average
+FROM batting
+WHERE AB > 0
+ORDER BY average desc, playerID
+LIMIT 5
+'''
+results = pd.read_sql_query(q,con)
+
+results
+
+```
+
+```{python}
+#| label: Q2 table 'b'
+#| code-summary: Batting average for 10 hits or more
+#| tbl-cap: "Batting Average for 10 Hits or More"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+q = '''
+SELECT playerID, yearID, (H * 1.0 / AB) AS average
+FROM batting
+WHERE AB >= 10
+ORDER BY average desc, playerID
+LIMIT 5
+'''
+results = pd.read_sql_query(q,con)
+
+results
+
+```
+
+```{python}
+#| label: Q2 table 'c'
+#| code-summary: Total hits
+#| tbl-cap: "Top 5 Total All Time Batting Averages"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+q = '''
+SELECT playerID, SUM(H * 1.0) / NULLIF(SUM(AB), 0) AS average_total
+FROM batting
+WHERE AB >= 100
+GROUP BY playerID
+ORDER BY average_total desc, playerID
+LIMIT 5
+'''
+results = pd.read_sql_query(q,con)
+
+results
+
+```
+
+## Reds or Pirates?
+
+__Pick any two baseball teams and compare them using a metric of your choice (average salary, home runs, number of wins, etc). Write an SQL query to get the data you need, then make a graph using Plotly Express to visualize the comparison. What do you learn?__
+
+_When choosing which two teams to compare, I first used a SQL query to find which two teams had the most data and the Reds and Pirates were two of the largest outliers with 129 occurences each. My results were that the Reds had far more home runs than the Pirates meaning that the Reds must have had much better hitters than the Pirates did._
+
+```{python}
+#| label: Q3 table
+#| code-summary: making table to show HR throughout the years
+#| tbl-cap: "Home runs between Cincinnati and Pittsburgh"
+#| tbl-cap-location: top
+# Include and execute your code here
+
+q = '''
+SELECT name team_name, sum(HR) home_runs, yearID year
+FROM teams
+WHERE name = "Pittsburgh Pirates" OR name = "Cincinnati Reds" AND yearID >= 1891
+GROUP BY yearID, name
+'''
+results = pd.read_sql_query(q,con)
+
+results
+
+```
+
+_Here is the basic comparison of the two teams yearly home runs from 1891-2019. It is easy to see the the blue line representing Cincinnati is almost always above the other teams number of home runs. From this chart, I can tell that the Cincinnati team must have had much better hitters than the Pittsburgh team._
+
+```{python}
+#| label: Q3 chart
+#| code-summary: Comparing HR
+#| fig-cap: "Comparing HR"
+#| fig-align: center
+# Include and execute your code here
+
+team_colors = {
+    "Pittsburgh Pirates": "blue",
+    "Cincinnati Reds": "red"
+}
+
+chart = px.line(results,
+    x="year", 
+    y="home_runs",
+    color="team_name",
+    width=900,
+    color_discrete_map=team_colors,
+    title="Homes Runs between Cincinnati and Pittsburgh"
+    
+)
+
+chart.update_xaxes(tickvals=[year for year in range(results['year'].min(), results['year'].max()+1, 16)])
+
+chart.update_yaxes(tickvals=[val for val in range(0, results['home_runs'].max()+1, 50)])
+
+chart.show()
+```
+
+_I included a second chart of the same data with the line chart greyed out to show the difference in the trendlines of both graphs. It is easy to see that the Cincinnati team was above the other team for most of the years according to the trendline._
+
+```{python}
+#| label: Q3 chart with trendline
+#| code-summary: Trendline comparison
+#| fig-cap: "Trendline Comparison"
+#| fig-align: center
+# Include and execute your code here
+
+team_colors = {
+    "Pittsburgh Pirates": "silver",
+    "Cincinnati Reds": "grey"
+}
+
+chart = px.line(results,
+    x="year", 
+    y="home_runs",
+    color="team_name",
+    width=900,
+    color_discrete_map=team_colors,
+    title="Homes Runs between Cincinnati and Pittsburgh"
+)
+
+# calculate trendlines by finding slope and y intercept
+team_count = 1
+for team_name in results['team_name'].unique():
+    if team_count == 1:
+      team_data = results[results['team_name'] == team_name]
+      m, b = np.polyfit(team_data['year'], team_data['home_runs'], 1)
+      trendline_y = m * results['year'] + b
+      chart.add_scatter(x=results['year'], y=trendline_y, mode='lines', line=dict(color='red', dash='dash'), name=f'Trendline - {team_name}')
+    else:
+      team_data = results[results['team_name'] ==   team_name]
+      m, b = np.polyfit(team_data['year'], team_data['home_runs'], 1)
+      trendline_y = m * results['year'] + b
+      chart.add_scatter(x=results['year'], y=trendline_y, mode='lines', line=dict(color='blue', dash='dash'), name=f'Trendline - {team_name}')
+    team_count += 1
+
+chart.update_xaxes(tickvals=[year for year in range(results['year'].min(), results['year'].max()+1, 16)])
+
+chart.update_yaxes(tickvals=[val for val in range(0, results['home_runs'].max()+1, 50)])
+
+chart.show()
+```
+
+# %%
+
+# careful to have your files in the exact same folder or list your entire path to the file.
+```{python}
+sqlite_file = 'lahmansbaseballdb.sqlite'
+
+con = sqlite3.connect(sqlite_file)
+
+q = '''
+SELECT (H*1.0 / AB) average, yearID year
+FROM batting
+WHERE yearID == 1871
+LIMIT 2
+'''
+qr = pd.read_sql_query(q,con)
+
+qr
+```

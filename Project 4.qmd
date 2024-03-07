@@ -31,16 +31,17 @@ execute:
 import pandas as pd
 import numpy as np
 import plotly.express as px
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+import plotly.graph_objects as go
 import sqlite3
 ```
 
 
 ## Elevator pitch
 
-_paste your elevator pitch here_
-_A SHORT (4-5 SENTENCES) PARAGRAPH THAT `DESCRIBES KEY INSIGHTS` TAKEN FROM METRICS IN THE PROJECT RESULTS THINK TOP OR MOST IMPORTANT RESULTS._
+_Using AI, I was able to find specific features of homes that can accuratly predict whether a home was built before or after 1980. Some of those things were the number of bathrooms, the total number of living space in the home, and the architecture style of the home. You would be surprised to see how many homes that are rated as great quality or in good condition do not vary as much as you think they would throughout the late 1800's and the early 1900's. It is also surprisling comprehensive to build a basic AI model, and studying this project can teach you a lot about how you can develop your own AI models!_
 
 ```{python}
 #| label: project data
@@ -50,13 +51,11 @@ df = pd.read_csv("https://raw.githubusercontent.com/byuidatascience/data4dwellin
 
 ```
 
-__Highlight the Questions and Tasks__
+## Potential Feature Charts
 
-## QUESTION|TASK 1
+__Create 2-3 charts that evaluate potential relationships between the home variables and before1980.__
 
-__COPY PASTE QUESTION|TASK 1 FROM THE PROJECT HERE__
-
-_type your results and analysis here_
+_I used averages of data and also counts of data to find relationships between different features of homes to see which ones show the highest chance of the prediction model being the most accurate. The box plot I created showed the average living space of homes before and after 1980 and there were clear differences in both categories. I know this would help the model predict which homes are most likely built before 1980 since there was a great difference in the averages. I also included bar charts and the information I was looking for was the ratio of before and after 1980 data and kept the highest difference in the counts._
 
 ```{python}
 #| label: Q1
@@ -81,12 +80,6 @@ with sqlite3.connect('your_database.db') as con:
 
     UNION ALL
 
-    SELECT before1980, 'Quality B' AS quality_type, SUM(quality_B) AS count
-    FROM home_data
-    GROUP BY quality_type, before1980
-
-    UNION ALL
-
     SELECT before1980, 'Quality C' AS quality_type, SUM(quality_C) AS count
     FROM home_data
     GROUP BY quality_type, before1980
@@ -99,11 +92,6 @@ with sqlite3.connect('your_database.db') as con:
     '''
 
     q_condition = '''
-    SELECT before1980, 'Excelent' AS condition, SUM(condition_Excel) AS count
-    FROM home_data
-    GROUP BY condition, before1980
-
-    UNION ALL
 
     SELECT before1980, 'Very Good' AS condition, SUM(condition_VGood) AS count
     FROM home_data
@@ -113,22 +101,10 @@ with sqlite3.connect('your_database.db') as con:
 
     SELECT before1980, 'Good' AS condition, SUM(condition_Good) AS count
     FROM home_data
-    GROUP BY condition, before1980
-
-    UNION ALL
-
-    SELECT before1980, 'Average' AS condition, SUM(condition_AVG) AS count
-    FROM home_data
     GROUP BY condition, before1980;
     '''
-    #condition_Fair was all equal to 0 so I excluded it
 
     q_garage = '''
-    SELECT before1980, 'Attached' AS garage_type, SUM(gartype_Att) AS count
-    FROM home_data
-    GROUP BY garage_type, before1980
-
-    UNION ALL
 
     SELECT before1980, 'Detatched' AS garage_type, SUM(gartype_Det) AS count
     FROM home_data
@@ -167,78 +143,25 @@ with sqlite3.connect('your_database.db') as con:
 
     UNION ALL
 
-    SELECT before1980, 'SPLIT LEVEL' AS arc_style, SUM("arcstyle_SPLIT LEVEL") AS count
-    FROM home_data
-    GROUP BY arc_style, before1980
-
-    UNION ALL
-
-    SELECT before1980, 'TRI-LEVEL' AS arc_style, SUM("arcstyle_TRI-LEVEL") AS count
-    FROM home_data
-    GROUP BY arc_style, before1980
-
-    UNION ALL
-
-    SELECT before1980, 'TRI-LEVEL WITH BASEMENT' AS arc_style, SUM("arcstyle_TRI-LEVEL WITH BASEMENT") AS count
-    FROM home_data
-    GROUP BY arc_style, before1980
-
-    UNION ALL
-
     SELECT before1980, 'TWO-STORY' AS arc_style, SUM("arcstyle_TWO-STORY") AS count
     FROM home_data
     GROUP BY arc_style, before1980;
     '''
-
-    q_status = '''
-    SELECT before1980, 'Status I' AS status, SUM(status_I) AS count
-    FROM home_data
-    GROUP BY status, before1980
-
-    UNION ALL
-
-    SELECT before1980, 'Status V' AS status, SUM(status_V) AS count
-    FROM home_data
-    GROUP BY status, before1980;
-    '''
-
-    q_money = '''
-    SELECT before1980, 'Selling Price' AS category, AVG(sprice) AS average
-    FROM home_data
-    GROUP BY category, before1980
-
-    UNION ALL
-
-    SELECT before1980, 'Net Price' AS category, AVG(netprice) AS average
-    FROM home_data
-    GROUP BY category, before1980
-
-    UNION ALL
-
-    SELECT before1980, 'Total Assessed Price' AS category, AVG(tasp) AS average
-    FROM home_data
-    GROUP BY category, before1980;
-    '''
     
-
     result_livearea = pd.read_sql_query(q_livearea, con)
     result_quality = pd.read_sql_query(q_quality, con)
     result_condition = pd.read_sql_query(q_condition, con)
     result_garage = pd.read_sql_query(q_garage, con)
     result_arc = pd.read_sql_query(q_arc, con)
-    result_status = pd.read_sql_query(q_status, con)
-    result_money = pd.read_sql_query(q_money, con)
-
-    print(result_money)
 
 ```
 
-_include figures in chunks and discuss your findings in the figure._
+_This is a box plot showing the differences in the living area of homes before and after 1980. The difference is clear and there is not much intersection._
 
 ```{python}
-#| label: Q1 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| label: Q1 box plot
+#| code-summary: show box plot
+#| fig-cap: "Living Area Box Plot"
 #| fig-align: center
 # Include and execute your code here
 
@@ -247,23 +170,20 @@ chart = px.box(
     x="before1980",
     y="AVG_livearea",
     labels={'AVG_livearea': 'Average Live Area', 'before1980': 'Before 1980'},
+    title='Living Area Before and After 1980'
 )
 
 chart.update_xaxes(tickvals=[0, 1], ticktext=['After 1980', 'Before 1980'])
 
-# Show the chart
 chart.show()
-
-#qualities look like they could be good
-#AVG_livearea
-#Tasp no good
-#Count qualities
 ```
 
+_These are all box plots that show the different counts of each of these ratings or features to compare them between before and after 1980._
+
 ```{python}
-#| label: Q1 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| label: Q1 chart A
+#| code-summary: show bar chart
+#| fig-cap: "Quality Bar Chart"
 #| fig-align: center
 # Include and execute your code here
 chart = px.bar(
@@ -272,23 +192,17 @@ chart = px.bar(
     y="count",
     color="before1980",
     barmode="group",  # This ensures bars are grouped by "before1980"
-    labels={'count': 'Count', 'quality_type': 'Quality', 'before1980': 'Before 1980'}
+    labels={'count': 'Count', 'quality_type': 'Quality', 'before1980': 'Before 1980'},
+    title='Quality of Homes Before and After 1980'
 )
 
-# Show the chart
 chart.show()
-
-#qualities look like they could be good
-#AVG_livearea
-
-#qualities look like they could be good
-#livearea
 ```
 
 ```{python}
-#| label: Q1 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| label: Q1 chart B
+#| code-summary: show bar chart
+#| fig-cap: "Condition Bar Chart"
 #| fig-align: center
 # Include and execute your code here
 chart = px.bar(
@@ -297,23 +211,17 @@ chart = px.bar(
     y="count",
     color="before1980",
     barmode="group",  # This ensures bars are grouped by "before1980"
-    labels={'count': 'Count', 'condition': 'Condition', 'before1980': 'Before 1980'}
+    labels={'count': 'Count', 'condition': 'Condition', 'before1980': 'Before 1980'},
+    title='Condition of Homes Before and After 1980'
 )
 
-# Show the chart
 chart.show()
-
-#qualities look like they could be good
-#AVG_livearea
-
-#qualities look like they could be good
-#livearea
 ```
 
 ```{python}
-#| label: Q1 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| label: Q1 chart C
+#| code-summary: show bar chart
+#| fig-cap: "Garage Type Bar Chart"
 #| fig-align: center
 # Include and execute your code here
 chart = px.bar(
@@ -322,23 +230,17 @@ chart = px.bar(
     y="count",
     color="before1980",
     barmode="group",  # This ensures bars are grouped by "before1980"
-    labels={'count': 'Count', 'garage_type': 'Garage Type', 'before1980': 'Before 1980'}
+    labels={'count': 'Count', 'garage_type': 'Garage Type', 'before1980': 'Before 1980'},
+    title='Garage Types Before and After 1980'
 )
 
-# Show the chart
 chart.show()
-
-#qualities look like they could be good
-#AVG_livearea
-
-#qualities look like they could be good
-#livearea
 ```
 
 ```{python}
-#| label: Q1 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| label: Q1 chart D
+#| code-summary: show bar chart
+#| fig-cap: "Arc Bar Chart"
 #| fig-align: center
 # Include and execute your code here
 chart = px.bar(
@@ -347,247 +249,182 @@ chart = px.bar(
     y="count",
     color="before1980",
     barmode="group",  # This ensures bars are grouped by "before1980"
-    labels={'count': 'Count', 'arc_style': 'Arc Style', 'before1980': 'Before 1980'}
+    labels={'count': 'Count', 'arc_style': 'Arc Style', 'before1980': 'Before 1980'},
+    title='Arc Styles Before and After 1980'
 )
 
-# Show the chart
 chart.show()
-
-#qualities look like they could be good
-#AVG_livearea
-
-#qualities look like they could be good
-#livearea
 ```
 
-```{python}
-#| label: Q1 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
-#| fig-align: center
-# Include and execute your code here
-chart = px.bar(
-    result_status,
-    x="status",
-    y="count",
-    color="before1980",
-    barmode="group",  # This ensures bars are grouped by "before1980"
-    labels={'count': 'Count', 'status': 'Status Type', 'before1980': 'Before 1980'}
-)
+## Random Forest Model
 
-# Show the chart
-chart.show()
+__Build a classification model labeling houses as being built “before 1980” or “during or after 1980”. Your goal is to reach or exceed 90% accuracy. Explain your final model choice (algorithm, tuning parameters, etc) and describe what other models you tried.__
 
-#qualities look like they could be good
-#AVG_livearea
-
-#qualities look like they could be good
-#livearea
-```
-
-```{python}
-#| label: Q1 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
-#| fig-align: center
-# Include and execute your code here
-chart = px.bar(
-    result_money,
-    x="category",
-    y="average",
-    color="before1980",
-    barmode="group",  # This ensures bars are grouped by "before1980"
-    labels={'average': 'Average', 'category': 'Price Type', 'before1980': 'Before 1980'}
-)
-
-# Show the chart
-chart.show()
-
-#qualities look like they could be good
-#AVG_livearea
-
-#qualities look like they could be good
-#livearea
-```
-
-```{python}
-#| label: Q1 table
-#| code-summary: table example
-#| tbl-cap: "Not much of a table"
-#| tbl-cap-location: top
-# Include and execute your code here
-
-```
-
-
-## QUESTION|TASK 2
-
-__COPY PASTE QUESTION|TASK 2 FROM THE PROJECT HERE__
-
-_type your results and analysis here_
+_The algorithm that I found was best for the data that was provided was the Random Forest model. And I decided to use a wide varity of features with one of the most important ones being the living area of each home. I found that was a great feature to help the prediction models. I also tried to use a logistic regression, SVM, gradiant boosting, and KNN models to test out the data.
 
 ```{python}
 #| label: Q2
-#| code-summary: Read and format data
+#| code-summary: Read and format data, prepare model data
 # Include and execute your code here
 # Read data
 X = df[[
-    'livearea', 'quality_C', 'condition_Good', 'gartype_Det', 'gartype_None', 'arcstyle_CONVERSIONS', 'arcstyle_ONE AND HALF-STORY', 'arcstyle_ONE-STORY', 'status_V'
+    'livearea', 'arcstyle_ONE-STORY', 'arcstyle_ONE AND HALF-STORY', 'gartype_Det', 'basement', 'totunits', 'stories', 'nocars', 'numbdrm' , 'numbaths'
 ]]
 
 y = df['before1980']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
 
-print("X_train shape:", X_train.shape)
-print("X_test shape:", X_test.shape)
-print("y_train shape:", y_train.shape)
-print("y_test shape:", y_test.shape)
-
 ```
 
-_include figures in chunks and discuss your findings in the figure._
+_This will print out different evaluation metrics like the accuracy, confusion matrix, and the Classification Report._
 
 ```{python}
-#| label: Q2 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| label: Q2 Model Results
+#| code-summary: Calculate accuracy, conf matrix, class rep
+#| fig-cap: "Random Forest Model Results"
 #| fig-align: center
 # Include and execute your code here
 
-# Initialize the Logistic Regression model
-model = LogisticRegression()
+# Initialize the Random Forest model
+rf_model = RandomForestClassifier()
 
 # Train the model using the training data
-model.fit(X_train, y_train)
+rf_model.fit(X_train, y_train)
 
 # Make predictions on the test data
-y_pred = model.predict(X_test)
+y_pred_rf = rf_model.predict(X_test)
 
-# Evaluate the model performance
-accuracy = accuracy_score(y_test, y_pred)
-conf_matrix = confusion_matrix(y_test, y_pred)
-classification_rep = classification_report(y_test, y_pred)
-
-# Print the evaluation metrics
-print("Accuracy:", AVG_accuracy)
-print("Confusion Matrix:\n", conf_matrix)
-print("Classification Report:\n", classification_rep)
+conf_matrix_rf = confusion_matrix(y_test, y_pred_rf)
+classification_rep_rf = classification_report(y_test, y_pred_rf)
+accuracy_rf = accuracy_score(y_test, y_pred_rf)
 ```
 
+## Most Important Features
 
-```{python}
-#| label: Q2 table
-#| code-summary: table example
-#| tbl-cap: "Not much of a table"
-#| tbl-cap-location: top
-# Include and execute your code here
-mydat = df.head(1000)\
-    .groupby('year')\
-    .sum()\
-    .reset_index()\
-    .tail(10)\
-    .filter(["year", "AK","AR"])
+__Justify your classification model by discussing the most important features selected by your model. This discussion should include a chart and a description of the features.__
 
-display(mydat)
-
-```
-
-
-## QUESTION|TASK 3
-
-__COPY PASTE QUESTION|TASK 3 FROM THE PROJECT HERE__
-
-_type your results and analysis here_
+_When trying to find the best features for my model in the section labeled "Potential Feature Charts" I found one of the best features was the living area. As I actually was feature engineering my model I noticed that a lot of the columns in the data that I thought would be most beneficial were not giving me the accuracy that I was looking for, so for this section I graphed the additional features that I found most beneficial for my model including units, stories, and basement. I shared the unit graph as a line graph because it is easy to see the differences throughout the years, but the box plots of the stories, and bathrooms show a obvious difference in the averages similar to the living area graph I mentioned earlier that cannot be seen on a line graph._
 
 ```{python}
 #| label: Q3
 #| code-summary: Read and format data
 # Include and execute your code here
 
+with sqlite3.connect('your_database.db') as con:
+    # Write DataFrame to SQLite
+    df.to_sql('home_data', con, index=False, if_exists='replace')
+
+    # Query and display results
+    q_units = '''
+    SELECT yrbuilt, AVG(totunits) AS AVG_units, before1980
+    FROM home_data
+    GROUP BY yrbuilt;
+    '''
+
+    q_stories = '''
+    SELECT yrbuilt, AVG(stories) AS AVG_stories, before1980
+    FROM home_data
+    GROUP BY yrbuilt;
+    '''
+
+    q_baths = '''
+    SELECT yrbuilt, AVG(stories) AS AVG_baths, before1980
+    FROM home_data
+    GROUP BY yrbuilt;
+    '''
+
+    result_units = pd.read_sql_query(q_units, con)
+    result_stories = pd.read_sql_query(q_stories, con)
+    result_baths = pd.read_sql_query(q_baths, con)
 
 ```
 
-_include figures in chunks and discuss your findings in the figure._
+_Line graph showing the different number of units from 1873-2013._
 
 ```{python}
-#| label: Q3 chart
-#| code-summary: plot example
-#| fig-cap: "My useless chart"
+#| label: Q3 Line Chart
+#| code-summary: plot line chart
+#| fig-cap: "Line Chart of Average Units"
 #| fig-align: center
 # Include and execute your code here
-chart = px.bar(df.head(200),
-    x="name", 
-    y="AK"
+chart = px.line(result_units,
+    x="yrbuilt", 
+    y="AVG_units",
+    labels={'AVG_units': 'Average Number of Units', 'yrbuilt': 'Year Built'},
+    title='Units per Home From 1800-2000'
 )
+
+chart.add_shape(
+    go.layout.Shape(
+        type="line",
+        x0=1980,
+        x1=1980,
+        y0=0,
+        y1=result_units['AVG_units'].max(),  # Adjust the y1 value as needed
+        line=dict(color="red", width=2, dash="dash"),
+    )
+)
+
 chart.show()
 ```
 
+_Box plots showing the difference in means of stories, and bathrooms before and after 1980._
 
 ```{python}
-#| label: Q3 table
-#| code-summary: table example
-#| tbl-cap: "Not much of a table"
-#| tbl-cap-location: top
+#| label: Q3 Box Plot A
+#| code-summary: show box plot
+#| fig-cap: "Box Plot of Average Stories"
+#| fig-align: center
 # Include and execute your code here
-mydat = df.head(1000)\
-    .groupby('year')\
-    .sum()\
-    .reset_index()\
-    .tail(10)\
-    .filter(["year", "AK","AR"])
+chart = px.box(
+    result_stories,
+    x="before1980",
+    y="AVG_stories",
+    labels={'AVG_stories': 'Average Number of Stories', 'before1980': 'Before 1980'},
+    title='Average Number of Stories Before and After 1980'
+)
 
-display(mydat)
+chart.update_xaxes(tickvals=[0, 1], ticktext=['After 1980', 'Before 1980'])
 
-#AI CWAP
-
-X = df[['Avg. Session Length', 'Time on App', 'Time on Website', 'Length of Membership']]
-y = df['Yearly Amount Spent']
-
-df = pd.read_csv('Ecommerce Customers')
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+chart.show()
 
 ```
 
-```{sql}
-INSERT INTO member (first_name, last_name, start_date, status, email, phone_number) VALUES
-('Oliver', 'Taylor', '1997-12-07', 'ACTIVE', 'Oliver.Taylor@fakemail.com', '250-541-5449');
+```{python}
+#| label: Q3 Box Plot B
+#| code-summary: show box plot
+#| fig-cap: "Box Plots of Average Bathrooms"
+#| fig-align: center
+# Include and execute your code here
+chart = px.box(
+    result_baths,
+    x="before1980",
+    y="AVG_baths",
+    labels={'AVG_baths': 'Average Number of Baths', 'before1980': 'Before 1980'},
+    title='Average Number of Bathrooms Before and After 1980'
+)
 
-INSERT INTO product (product_name, description, price, weight) VALUES
-('Melapower', 'This product is Buoyant... ', '10.00', '3.5'),
-('Melasoft', 'This product is Exemplary... ', '10.00', '3.5'),
-('Melaboost', 'This product is Delightful... ', '7.00', '3.5'),
-('Melabrite', 'This product is Glorious... ', '7.00', '3.5'),
-('Lemon Brite', 'This product is Exhilarating... ', '6.00', '3.5'),
-('Nut and Fruit Clusters', 'This product is Stellar... ', '6.50', '3.5'),
-('Simply Fit Bars', 'This product is Exuberant... ', '12.00', '3.5'),
-('Peak Performance', 'This product is Fantastic... ', '90.00', '3.5'),
-('Gold Bar', 'This product is Awe-inspiring... ', '2.00', '3.5'),
-('Renew Lotion', 'This product is Lively... ', '20.00', '3.5');
+chart.update_xaxes(tickvals=[0, 1], ticktext=['After 1980', 'Before 1980'])
 
-INSERT INTO cart (member_id) VALUES
-(1);
+chart.show()
 
-INSERT INTO cart_product (cart_id, member_id, product_id) VALUES
-(1,1,1)
-(1,1,2)
-(1,1,3)
-(1,1,4)
-(1,1,5)
+```
 
-INSERT INTO shipping_address (address_1, city, state, zip_code, country, member_id) VALUES
-('828 Cypress Street', 'Moss Landing', 'PA', '90123', 'USA', 1);
+## Prediction Metrics
 
-INSERT INTO melaleuca_mock_store.order (tracking_number, expected_delivery_date, cart_id, member_id, shipping_address_id) VALUES
-('IN7765260235771583', '2024-03-19', 1, 1, 1);
+__Describe the quality of your classification model using 2-3 different evaluation metrics. You also need to explain how to interpret each of the evaluation metrics you use.__
 
-SELECT order_id, m.first_name, m.last_name, 
-SUM(p.price) + 10.22 + (SUM(p.price)*0.06) AS ttl_price, SUM(p.weight) AS ttl_weight, o.expected_delivery_date
-from melaleuca_mock_store.order o JOIN cart c ON
-c.cart_id = o.cart_id JOIN cart_product cp ON
-cp.cart_id = c.cart_id JOIN product p ON
-p.product_id = cp.product_id JOIN `member` m ON
-m.member_id = o.member_id
-GROUP BY order_id, m.first_name, m.last_name, o.expected_delivery_date;
+_I was able to make a model with 91% accuracy which means that after the model trained with 70% of the data the remaining 30% was tested and predictions were madde, the model could then predict if a home was built before or after 1980 with that accuracy. I also have the Confusion Matrix which shows the breakdown of where the model succeeded and failed in the positive or negative. There is a True Positive where the model accuratly predicted a home was built before 1980, True Negative where the model accuratly predicted a home was not built before 1980, False Positive where the model inaccuratly predicated a home was built before 1980, and finally False Negative where the model inaccuratly predicted a home was not built before 1980._
+
+```{python}
+#| label: Q3 Organized Data
+#| code-summary: Show Model Data
+#| tbl-cap: "MOdel Data"
+#| tbl-cap-location: top
+# Include and execute your code here
+print("Accuracy - Random Forest:", accuracy_rf)
+print('--------------------------------------------------------------')
+print("Confusion Matrix - Random Forest:\n", conf_matrix_rf)
+
 ```

@@ -300,6 +300,48 @@ classification_rep_rf = classification_report(y_test, y_pred_rf)
 accuracy_rf = accuracy_score(y_test, y_pred_rf)
 ```
 
+```{python}
+#| label: Q2
+#| code-summary: Read and format data, prepare model data
+# Include and execute your code here
+# Read data
+X = df[[
+    'sprice'
+]]
+
+y = df['before1980']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.34, random_state=76)
+
+average_first_10_values = X_train.head(10).mean()
+
+print("Average of the first 10 values in testing y:", average_first_10_values)
+
+```
+
+_This will print out different evaluation metrics like the accuracy, confusion matrix, and the Classification Report._
+
+```{python}
+#| label: Q2 Model Results
+#| code-summary: Calculate accuracy, conf matrix, class rep
+#| fig-cap: "Random Forest Model Results"
+#| fig-align: center
+# Include and execute your code here
+
+# Initialize the Random Forest model
+rf_model = RandomForestClassifier()
+
+# Train the model using the training data
+rf_model.fit(X_train, y_train)
+
+# Make predictions on the test data
+y_pred_rf = rf_model.predict(X_test)
+
+conf_matrix_rf = confusion_matrix(y_test, y_pred_rf)
+classification_rep_rf = classification_report(y_test, y_pred_rf)
+accuracy_rf = accuracy_score(y_test, y_pred_rf)
+```
+
 ## Most Important Features
 
 __Justify your classification model by discussing the most important features selected by your model. This discussion should include a chart and a description of the features.__
@@ -426,5 +468,266 @@ _I was able to make a model with 91% accuracy which means that after the model t
 print("Accuracy - Random Forest:", accuracy_rf)
 print('--------------------------------------------------------------')
 print("Confusion Matrix - Random Forest:\n", conf_matrix_rf)
+
+```
+
+```{sql}
+-- MySQL Workbench Forward Engineering
+
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
+-- -----------------------------------------------------
+-- Schema melaleuca_mock_store
+-- -----------------------------------------------------
+
+-- -----------------------------------------------------
+-- Schema melaleuca_mock_store
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `melaleuca_mock_store` DEFAULT CHARACTER SET utf8 ;
+USE `melaleuca_mock_store` ;
+
+-- -----------------------------------------------------
+-- Table `melaleuca_mock_store`.`member`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `melaleuca_mock_store`.`member` (
+  `member_id` INT NOT NULL AUTO_INCREMENT,
+  `first_name` VARCHAR(45) NOT NULL,
+  `last_name` VARCHAR(45) NOT NULL,
+  `birth_date` DATE NULL,
+  `start_date` DATE NOT NULL,
+  `cancel_date` DATE NULL,
+  `status` VARCHAR(45) NOT NULL,
+  `email` VARCHAR(45) NOT NULL,
+  `phone_number` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`member_id`),
+  UNIQUE INDEX `idMember_UNIQUE` (`member_id` ASC) VISIBLE)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `melaleuca_mock_store`.`cart`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `melaleuca_mock_store`.`cart` (
+  `cart_id` INT NOT NULL AUTO_INCREMENT,
+  `member_id` INT NOT NULL,
+  PRIMARY KEY (`cart_id`, `member_id`),
+  INDEX `fk_cart_member1_idx` (`member_id` ASC) VISIBLE,
+  CONSTRAINT `fk_cart_member1`
+    FOREIGN KEY (`member_id`)
+    REFERENCES `melaleuca_mock_store`.`member` (`member_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `melaleuca_mock_store`.`shipping_address`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `melaleuca_mock_store`.`shipping_address` (
+  `shipping_address_id` INT NOT NULL AUTO_INCREMENT,
+  `address_1` VARCHAR(45) NOT NULL,
+  `address_2` VARCHAR(45) NULL,
+  `state` CHAR(2) NOT NULL,
+  `country` CHAR(3) NOT NULL,
+  `city` VARCHAR(45) NOT NULL,
+  `zip_code` CHAR(5) NOT NULL,
+  `member_id` INT NOT NULL,
+  PRIMARY KEY (`shipping_address_id`, `member_id`),
+  INDEX `fk_shipping_address_member1_idx` (`member_id` ASC) VISIBLE,
+  CONSTRAINT `fk_shipping_address_member1`
+    FOREIGN KEY (`member_id`)
+    REFERENCES `melaleuca_mock_store`.`member` (`member_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `melaleuca_mock_store`.`order`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `melaleuca_mock_store`.`order` (
+  `order_id` INT NOT NULL AUTO_INCREMENT,
+  `tracking_number` VARCHAR(45) NOT NULL,
+  `current_location` VARCHAR(45) NULL,
+  `expected_delivery_date` DATETIME NULL,
+  `cart_id` INT NOT NULL,
+  `member_id` INT NOT NULL,
+  `latest_update` TIMESTAMP NULL,
+  `shipping_address_id` INT NOT NULL,
+  PRIMARY KEY (`order_id`, `cart_id`, `member_id`, `shipping_address_id`),
+  INDEX `fk_order_cart1_idx` (`cart_id` ASC, `member_id` ASC) VISIBLE,
+  INDEX `fk_order_shipping_address1_idx` (`shipping_address_id` ASC) VISIBLE,
+  CONSTRAINT `fk_order_cart1`
+    FOREIGN KEY (`cart_id` , `member_id`)
+    REFERENCES `melaleuca_mock_store`.`cart` (`cart_id` , `member_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_order_shipping_address1`
+    FOREIGN KEY (`shipping_address_id`)
+    REFERENCES `melaleuca_mock_store`.`shipping_address` (`shipping_address_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `melaleuca_mock_store`.`product`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `melaleuca_mock_store`.`product` (
+  `product_id` INT NOT NULL AUTO_INCREMENT,
+  `description` VARCHAR(250) NOT NULL,
+  `price` DECIMAL(5,2) NOT NULL,
+  `product_name` VARCHAR(45) NOT NULL,
+  `weight` DECIMAL(4,2) NOT NULL,
+  PRIMARY KEY (`product_id`),
+  UNIQUE INDEX `idproduct_UNIQUE` (`product_id` ASC) VISIBLE,
+  UNIQUE INDEX `product_name_UNIQUE` (`product_name` ASC) VISIBLE)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `melaleuca_mock_store`.`product_special`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `melaleuca_mock_store`.`product_special` (
+  `product_special_id` INT NOT NULL AUTO_INCREMENT,
+  `price` DECIMAL(5,2) NOT NULL,
+  `product_id` INT NOT NULL,
+  PRIMARY KEY (`product_special_id`, `product_id`),
+  UNIQUE INDEX `idproduct_UNIQUE` (`product_special_id` ASC) VISIBLE,
+  INDEX `fk_special_product1_idx` (`product_id` ASC) VISIBLE,
+  CONSTRAINT `fk_special_product1`
+    FOREIGN KEY (`product_id`)
+    REFERENCES `melaleuca_mock_store`.`product` (`product_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `melaleuca_mock_store`.`payment_method`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `melaleuca_mock_store`.`payment_method` (
+  `payment_method_id` INT NOT NULL AUTO_INCREMENT,
+  `card_type` VARCHAR(45) NOT NULL,
+  `member_id` INT NOT NULL,
+  PRIMARY KEY (`payment_method_id`, `member_id`),
+  UNIQUE INDEX `idpayment_method_UNIQUE` (`payment_method_id` ASC) VISIBLE,
+  INDEX `fk_payment_method_member1_idx` (`member_id` ASC) VISIBLE,
+  CONSTRAINT `fk_payment_method_member1`
+    FOREIGN KEY (`member_id`)
+    REFERENCES `melaleuca_mock_store`.`member` (`member_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `melaleuca_mock_store`.`service`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `melaleuca_mock_store`.`service` (
+  `service_id` INT NOT NULL AUTO_INCREMENT,
+  `service_name` VARCHAR(45) NULL,
+  `monthly_cost` DECIMAL(5,2) NULL,
+  `member_id` INT NOT NULL,
+  PRIMARY KEY (`service_id`, `member_id`),
+  INDEX `fk_services_member1_idx` (`member_id` ASC) VISIBLE,
+  UNIQUE INDEX `idservice_UNIQUE` (`service_id` ASC) VISIBLE,
+  CONSTRAINT `fk_services_member1`
+    FOREIGN KEY (`member_id`)
+    REFERENCES `melaleuca_mock_store`.`member` (`member_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `melaleuca_mock_store`.`cart_product`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `melaleuca_mock_store`.`cart_product` (
+  `cart_product_id` INT NOT NULL AUTO_INCREMENT,
+  `cart_id` INT NOT NULL,
+  `member_id` INT NOT NULL,
+  `product_id` INT NOT NULL,
+  PRIMARY KEY (`cart_product_id`, `cart_id`, `member_id`, `product_id`),
+  INDEX `fk_cart_product_cart1_idx` (`cart_id` ASC, `member_id` ASC) VISIBLE,
+  INDEX `fk_cart_product_product1_idx` (`product_id` ASC) VISIBLE,
+  CONSTRAINT `fk_cart_product_cart1`
+    FOREIGN KEY (`cart_id` , `member_id`)
+    REFERENCES `melaleuca_mock_store`.`cart` (`cart_id` , `member_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_cart_product_product1`
+    FOREIGN KEY (`product_id`)
+    REFERENCES `melaleuca_mock_store`.`product` (`product_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+```
+
+```{sql}
+SET @member_id = 2;
+SET @cart_id = 2;
+SET @shipping_address_id = 2;
+
+INSERT INTO member (first_name, last_name, start_date, status, email, phone_number) VALUES
+('Linea', 'Swift', '2000-08-09', 'ACTIVE', 'Linea.Swift@fakemail.com', '250-800-5449');
+
+INSERT INTO cart (member_id) VALUES
+(@member_id);
+
+INSERT INTO cart_product (cart_id, member_id, product_id) VALUES
+(@cart_id,@member_id,6),
+(@cart_id,@member_id,7),
+(@cart_id,@member_id,8),
+(@cart_id,@member_id,9),
+(@cart_id,@member_id,10);
+
+INSERT INTO shipping_address (address_1, city, state, zip_code, country, member_id) VALUES
+('829 Cypress Avenue','Moss Landing', 'PA', '90123', 'USA', @member_id);
+
+INSERT INTO melaleuca_mock_store.order (tracking_number, expected_delivery_date, cart_id, member_id, shipping_address_id) VALUES
+('IN7765260235771584', '2024-03-20', @cart_id, @member_id, @shipping_address_id);
+
+
+SELECT order_id, m.first_name, m.last_name, 
+SUM(p.price) + 10.22 + (SUM(p.price)*0.06) AS ttl_price, SUM(p.weight) AS ttl_weight, o.expected_delivery_date
+from melaleuca_mock_store.order o JOIN cart c ON
+c.cart_id = o.cart_id JOIN cart_product cp ON
+cp.cart_id = c.cart_id JOIN product p ON
+p.product_id = cp.product_id JOIN `member` m ON
+m.member_id = o.member_id
+GROUP BY order_id, m.first_name, m.last_name, o.expected_delivery_date
+HAVING o.order_id = 2;
+
+INSERT INTO service (service_name, monthly_cost, member_id) VALUES
+('Home Security', 299.99, 1)
+
+INSERT INTO product_special (price, product_id) VALUES
+(1.00, 1),
+(0.50, 3)
+
+SELECT order_id, m.first_name, m.last_name, 
+SUM(CASE
+		WHEN ps.product_id = p. product_id 
+			THEN ps.price
+      ELSE p.price
+		END)*1.06 + 10.22 AS ttl_price, SUM(p.weight) AS ttl_weight, o.expected_delivery_date
+from melaleuca_mock_store.order o JOIN cart c ON
+c.cart_id = o.cart_id JOIN cart_product cp ON
+cp.cart_id = c.cart_id JOIN product p ON
+p.product_id = cp.product_id JOIN `member` m ON
+m.member_id = o.member_id LEFT JOIN product_special ps ON
+ps.product_id = p. product_id
+GROUP BY order_id, m.first_name, m.last_name, o.expected_delivery_date
+HAVING o.order_id = 1;
+
 
 ```
